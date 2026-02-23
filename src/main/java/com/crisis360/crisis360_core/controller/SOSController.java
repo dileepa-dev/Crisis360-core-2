@@ -2,6 +2,7 @@ package com.crisis360.crisis360_core.controller;
 
 import com.crisis360.crisis360_core.data.SOSRequest;
 import com.crisis360.crisis360_core.service.SOSService;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -15,14 +16,19 @@ public class SOSController {
     }
 
     @PostMapping
-    public String sendSOS(@RequestBody SOSRequest request) throws Exception {
+    public ResponseEntity<?> sendSOS(@RequestBody SOSRequest request) {
+        try {
+            service.createSOS(
+                    request.getUserId(),
+                    request.getLatitude(),
+                    request.getLongitude()
+            );
 
-        service.createSOS(
-                request.getUserId(),
-                request.getLatitude(),
-                request.getLongitude()
-        );
+            return ResponseEntity.ok("SOS Sent Successfully");
 
-        return "SOS Sent Successfully";
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Failed to save SOS");
+        }
     }
+
 }
