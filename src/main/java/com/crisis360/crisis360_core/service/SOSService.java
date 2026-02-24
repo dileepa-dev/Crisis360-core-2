@@ -22,7 +22,7 @@ public class SOSService {
         sos.put("latitude", latitude);
         sos.put("longitude", longitude);
         sos.put("status", "ACTIVE");
-        sos.put("riskLevel", RiskLevel.HIGH.name()); // safer
+        sos.put("riskLevel", RiskLevel.HIGH.name());
         sos.put("timestamp", LocalDateTime.now().toString());
 
         ApiFuture<DocumentReference> future =
