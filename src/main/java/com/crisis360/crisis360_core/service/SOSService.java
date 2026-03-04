@@ -2,8 +2,7 @@ package com.crisis360.crisis360_core.service;
 
 import com.crisis360.crisis360_core.enums.RiskLevel;
 import com.google.api.core.ApiFuture;
-import com.google.cloud.firestore.DocumentReference;
-import com.google.cloud.firestore.Firestore;
+import com.google.cloud.firestore.*;
 import com.google.firebase.cloud.FirestoreClient;
 import org.springframework.stereotype.Service;
 
@@ -13,7 +12,10 @@ import java.util.Map;
 
 @Service
 public class SOSService {
-    public void createSOS(String userId, double latitude, double longitude) throws Exception {
+
+    private static final String COLLECTION = "sos_alerts";
+
+    public void createOrUpdateSOS(String userId, double latitude, double longitude) throws Exception {
 
         Firestore firestoreDb = FirestoreClient.getFirestore();
 
@@ -25,12 +27,16 @@ public class SOSService {
         sos.put("riskLevel", RiskLevel.HIGH.name());
         sos.put("timestamp", LocalDateTime.now().toString());
 
-        ApiFuture<DocumentReference> future =
-                firestoreDb.collection("sos_alerts").add(sos);
+        // ✅ Use userId as document ID
+        DocumentReference docRef =
+                firestoreDb.collection(COLLECTION).document(userId);
 
-        // 🔥 WAIT FOR FIRESTORE WRITE
-        DocumentReference documentReference = future.get();
+        // ✅ This will create if not exists OR update if exists
+        ApiFuture<WriteResult> future =
+                docRef.set(sos, SetOptions.merge());
 
-        System.out.println("Saved SOS with ID: " + documentReference.getId());
+        future.get();
+
+        System.out.println("SOS created/updated for user: " + userId);
     }
 }

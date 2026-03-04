@@ -6,6 +6,7 @@ import com.google.firebase.cloud.FirestoreClient;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -17,17 +18,24 @@ public class NotificationController {
 
     @GetMapping("/{district}")
     public List<Map<String, Object>> getNotificationsByDistrict(@PathVariable String district) throws Exception {
+
         Firestore db = FirestoreClient.getFirestore();
         CollectionReference notifications = db.collection(COLLECTION_NAME);
 
-        // Query only notifications for this district
-        ApiFuture<QuerySnapshot> query = notifications.whereEqualTo("district", district).get();
-        List<QueryDocumentSnapshot> documents = query.get().getDocuments();
+        ApiFuture<QuerySnapshot> query =
+                notifications.whereEqualTo("district", district).get();
+
+        List<QueryDocumentSnapshot> documents =
+                query.get().getDocuments();
 
         List<Map<String, Object>> result = new ArrayList<>();
+
         for (QueryDocumentSnapshot doc : documents) {
-            result.add(doc.getData());
+            Map<String, Object> data = new HashMap<>(doc.getData());
+            data.put("id", doc.getId());
+            result.add(data);
         }
+
         return result;
     }
 }

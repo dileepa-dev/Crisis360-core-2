@@ -1,5 +1,6 @@
 package com.crisis360.crisis360_core.controller;
 
+import com.crisis360.crisis360_core.data.SafetySubmitRequest;
 import com.crisis360.crisis360_core.service.NotificationService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -7,7 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/send-safety")
+@RequestMapping("/safety")
 @CrossOrigin
 public class SafetyController {
     private final NotificationService notificationService;
@@ -44,5 +45,11 @@ public class SafetyController {
 
 
         return ResponseEntity.ok("Safety Confirmation Sent");
+    }
+
+    @PostMapping("/submit")
+    public ResponseEntity<?> submit(@RequestBody SafetySubmitRequest req) throws Exception {
+        String id = notificationService.saveOrUpdateSafetyResponse(req);
+        return ResponseEntity.ok(Map.of("status", "OK", "id", id));
     }
 }

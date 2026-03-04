@@ -18,7 +18,7 @@ public class SOSController {
     @PostMapping
     public ResponseEntity<?> sendSOS(@RequestBody SOSRequest request) {
         try {
-            service.createSOS(
+            service.createOrUpdateSOS(
                     request.getUserId(),
                     request.getLatitude(),
                     request.getLongitude()
