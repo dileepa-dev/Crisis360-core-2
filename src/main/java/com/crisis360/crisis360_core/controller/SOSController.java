@@ -1,9 +1,12 @@
 package com.crisis360.crisis360_core.controller;
 
 import com.crisis360.crisis360_core.data.SOSRequest;
+import com.crisis360.crisis360_core.data.SosMapPoint;
 import com.crisis360.crisis360_core.service.SOSService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/sos")
@@ -31,4 +34,8 @@ public class SOSController {
         }
     }
 
+    @GetMapping("/sos-points")
+    public List<SosMapPoint> getSosPoints() throws Exception {
+        return service.getAllSosPoints();
+    }
 }
