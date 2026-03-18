@@ -3,16 +3,15 @@ package com.crisis360.crisis360_core.service;
 import com.crisis360.crisis360_core.component.MlRiskClient;
 import com.crisis360.crisis360_core.data.SafetySubmitRequest;
 import com.google.api.core.ApiFuture;
-import com.google.cloud.firestore.DocumentReference;
-import com.google.cloud.firestore.SetOptions;
-import com.google.cloud.firestore.WriteResult;
+import com.google.cloud.firestore.*;
 import com.google.firebase.messaging.*;
-import com.google.cloud.firestore.Firestore;
 import com.google.firebase.cloud.FirestoreClient;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -27,44 +26,48 @@ public class NotificationService {
     }
 
     public void sendSafetyToDistrict(String province, String district) throws Exception {
-        String topicName = sanitizeTopic(province + "_" + district);
-
-        // Prepare notification data
-        Map<String, Object> data = new HashMap<>();
-        data.put("type", "SAFETY_CHECK");
-        data.put("province", province);
-        data.put("district", district);
-        data.put("timestamp", LocalDateTime.now().toString());
-
-        // Save notification to Firestore
-        saveNotificationToDB(topicName, data);
-
-        // Send FCM notification
-        Message message = Message.builder()
-                .setTopic(topicName)
-                .setNotification(Notification.builder()
-                        .setTitle("Safety Confirmation Required")
-                        .setBody("Please confirm your safety status")
-                        .build())
-                .putAllData((Map<String, String>) (Map) data)
-                .build();
-
-        FirebaseMessaging.getInstance().send(message);
-        System.out.println("Notification sent to topic: " + topicName);
-    }
-
-    private void saveNotificationToDB(String topic, Map<String, Object> data) throws Exception {
         Firestore db = FirestoreClient.getFirestore();
-        Map<String, Object> docData = new HashMap<>(data);
-        docData.put("topic", topic); // sanitized topic (for FCM)
-        docData.put("district", data.get("district")); // store district explicitly
-        db.collection(COLLECTION_NAME).add(docData).get();
-        System.out.println("Notification saved to DB for topic: " + topic);
-    }
 
-    private String sanitizeTopic(String input) {
-        // Replace all spaces with underscores, remove invalid characters
-        return input.trim().replaceAll("[^a-zA-Z0-9-_.~%]", "_");
+        ApiFuture<QuerySnapshot> future = db.collection("user_tokens")
+                .whereEqualTo("province", province)
+                .whereEqualTo("district", district)
+                .get();
+
+        List<QueryDocumentSnapshot> docs = future.get().getDocuments();
+
+        List<String> tokens = new ArrayList<>();
+        for (QueryDocumentSnapshot doc : docs) {
+            String token = doc.getString("token");
+            if (token != null && !token.isBlank()) {
+                tokens.add(token);
+            }
+        }
+
+        if (tokens.isEmpty()) {
+            System.out.println("No tokens found for " + province + " / " + district);
+            return;
+        }
+
+        for (String token : tokens) {
+            Message message = Message.builder()
+                    .setToken(token)
+                    .setNotification(Notification.builder()
+                            .setTitle("Safety Confirmation Required")
+                            .setBody("Please confirm your safety status")
+                            .build())
+                    .putData("type", "SAFETY_CHECK")
+                    .putData("province", province)
+                    .putData("district", district)
+                    .putData("timestamp", LocalDateTime.now().toString())
+                    .build();
+
+            try {
+                String response = FirebaseMessaging.getInstance().send(message);
+                System.out.println("Sent to token: " + token + " -> " + response);
+            } catch (Exception e) {
+                System.out.println("Failed token: " + token + " error: " + e.getMessage());
+            }
+        }
     }
 
     public String saveOrUpdateSafetyResponse(SafetySubmitRequest req) throws Exception {

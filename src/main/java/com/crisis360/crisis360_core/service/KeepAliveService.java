@@ -15,9 +15,9 @@ public class KeepAliveService {
     public void keepHfSpaceAlive() {
         try {
             var resp = restTemplate.getForEntity(HF_URL, String.class);
-            System.out.println("[KeepAlive] HF ping status=" + resp.getStatusCode());
+            System.out.println("[KeepAlive] ML Model Hosted Link: " + resp.getStatusCode());
         } catch (Exception e) {
-            System.out.println("[KeepAlive] Failed: " + e.getClass().getSimpleName() + " - " + e.getMessage());
+            System.out.println("[KeepAlive] ML Model Hosted Link: " + e.getClass().getSimpleName() + " - " + e.getMessage());
         }
     }
 }
